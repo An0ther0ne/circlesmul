@@ -19,6 +19,8 @@ Some screenshots:
 ![sshot8.png](img/sshot8.png)
 ![sshot9.png](img/sshot9.png)
 ![sshot10.png](img/sshot10.png)
+![sshot11.png](img/sshot11.png)
+![sshot12.png](img/sshot12.png)
 
 ## Requirements:
 

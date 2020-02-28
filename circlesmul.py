@@ -14,6 +14,7 @@ y0 = height / 2
 Radius = (width - 10) // 2
 ScreenShotFName = 'sshot'
 ScreenShotType  = '.png'
+Inverted = False
 
 def viewImage(image, name_of_window):
 	cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
@@ -63,8 +64,9 @@ layout = [[
 			title_location = sg.TITLE_LOCATION_TOP,
 		),	
 	],[
-		sg.Button('Screenshot', size=(10,1), pad=(180,10), font='Hevletica 14', key='-scrshot-'),
-		sg.Button('Exit', size=(10,1), pad=(10,10), font='Hevletica 14')
+		sg.Button('Screenshot', size=(10,1), pad=(75,10), font='Hevletica 14', key='-scrshot-'),
+		sg.Button('Invert', size=(10,1), pad=(75,10), font='Hevletica 14', key='-invert-'),
+		sg.Button('Exit', size=(10,1), pad=(75,10), font='Hevletica 14')
 	],]
 
 window = sg.Window('Circle of multiplications', layout, no_titlebar=False, location=(0,0))
@@ -89,6 +91,9 @@ while True:
 	event, values = window.read(timeout=25)
 	if event == 'Exit' or event == None:
 		break
+	elif event == '-invert-':
+		Inverted = not Inverted
+		old_type = -1
 	elif event == '-scrshot-':
 		if sshotcnt <= 0:
 			files = [f for f in os.listdir() if os.path.isfile(f) and re.match(ScreenShotFName, f)]
@@ -98,20 +103,15 @@ while True:
 				lastnum = 0
 				for f in files:
 					matchstr = '^' + ScreenShotFName + '(\\d+)\\' + ScreenShotType + '$'
-					print("+++ matchstr =", matchstr)
 					matchresult = re.match(matchstr, f)
 					if matchresult:
 						num = int(matchresult.group(1))
 						if lastnum < num:
 							lastnum = num
-						print("+++ match: '{}', num={}".format(f, num))
-					else:
-						print('+++ not match:', f)
 				sshotcnt = lastnum + 1
 		else:
 			sshotcnt += 1
 		sshotfile = ScreenShotFName + str(sshotcnt) + ScreenShotType
-		print("++++ save screenshot to file: '"+sshotfile+"': '{}' + '{}' + '{}'".format(ScreenShotFName, str(sshotcnt), ScreenShotType))
 		cv2.imwrite(sshotfile, frame)
 	N_value = int(values['-N_slide-'])
 	S_color = values['-color-']
@@ -149,5 +149,8 @@ while True:
 				j = i * (N_mul + 1) % N_value
 				p1,p2 = mmul(i,j)
 				frame = cv2.line(frame, p1, p2, color, 1)
-		imgbytes = cv2.imencode('.png', frame)[1].tobytes()  # ditto
+		if Inverted:
+			print("inverted")
+			frame = cv2.bitwise_not(frame)
+		imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 		image_elem.update(data=imgbytes)
