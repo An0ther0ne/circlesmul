@@ -153,7 +153,7 @@ while True:
 				frame = cv2.line(frame, p1, p2, color, 1)
 		elif N_type == 3:
 			for i in range(N_value):
-				j = (i + N_mul) % N_value3
+				j = (i + N_mul) % N_value
 				p1, p2 = mmul(i,j)
 				frame = cv2.line(frame, p1, p2, color, 1)
 		if Inverted:
