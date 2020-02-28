@@ -81,10 +81,12 @@ old_type  = -1
 sshotcnt  = -1
 
 def mmul(i,j):
-	x1 = int(x0 + Radius * cos(i * 2 * pi / N_value))
-	y1 = int(y0 - Radius * sin(i * 2 * pi / N_value))
-	x2 = int(x0 + Radius * cos(j * 2 * pi / N_value))
-	y2 = int(y0 - Radius * sin(j * 2 * pi / N_value))
+	alfa = i * 2 * pi / N_value
+	beta = j * 2 * pi / N_value
+	x1 = int(x0 + Radius * cos(alfa))
+	y1 = int(y0 - Radius * sin(alfa))
+	x2 = int(x0 + Radius * cos(beta))
+	y2 = int(y0 - Radius * sin(beta))
 	return (x1,y1),(x2,y2)
 
 while True:
@@ -147,7 +149,12 @@ while True:
 		elif N_type == 2:
 			for i in range(N_value):
 				j = i * (N_mul + 1) % N_value
-				p1,p2 = mmul(i,j)
+				p1, p2 = mmul(i,j)
+				frame = cv2.line(frame, p1, p2, color, 1)
+		elif N_type == 3:
+			for i in range(N_value):
+				j = (i + N_mul) % N_value
+				p1, p2 = mmul(i,j)
 				frame = cv2.line(frame, p1, p2, color, 1)
 		if Inverted:
 			print("inverted")
