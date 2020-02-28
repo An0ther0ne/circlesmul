@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import os
+import re
 import numpy as np
 import cv2
 import PySimpleGUI 	as sg
@@ -11,6 +12,8 @@ height = width
 x0 = width / 2
 y0 = height / 2
 Radius = (width - 10) // 2
+ScreenShotFName = 'sshot'
+ScreenShotType  = '.png'
 
 def viewImage(image, name_of_window):
 	cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
@@ -51,7 +54,7 @@ layout = [[
 			title_location = sg.TITLE_LOCATION_TOP_LEFT,
 		),
 		sg.Frame(
-			'Type:', 
+			'Method:', 
 			typelayout, 
 			font='Any 11', 
 			title_color='blue', 
@@ -60,17 +63,20 @@ layout = [[
 			title_location = sg.TITLE_LOCATION_TOP,
 		),	
 	],[
-		sg.Button('Exit', size=(7,1), font='Hevletica 14')
+		sg.Button('Screenshot', size=(10,1), pad=(180,10), font='Hevletica 14', key='-scrshot-'),
+		sg.Button('Exit', size=(10,1), pad=(10,10), font='Hevletica 14')
 	],]
 
 window = sg.Window('Circle of multiplications', layout, no_titlebar=False, location=(0,0))
 image = np.zeros((height, width, 3), dtype="uint8")
+frame = image.copy()
 image_elem  = window['-image-']
 
 old_N     = -1
 old_color = -1
 old_mul   = -1
 old_type  = -1
+sshotcnt  = -1
 
 def mmul(i,j):
 	x1 = int(x0 + Radius * cos(i * 2 * pi / N_value))
@@ -80,9 +86,33 @@ def mmul(i,j):
 	return (x1,y1),(x2,y2)
 
 while True:
-	event, values = window.read(timeout=50)
+	event, values = window.read(timeout=25)
 	if event == 'Exit' or event == None:
 		break
+	elif event == '-scrshot-':
+		if sshotcnt <= 0:
+			files = [f for f in os.listdir() if os.path.isfile(f) and re.match(ScreenShotFName, f)]
+			if len(files) == 0:
+				sshotcnt = 1
+			else:
+				lastnum = 0
+				for f in files:
+					matchstr = '^' + ScreenShotFName + '(\\d+)\\' + ScreenShotType + '$'
+					print("+++ matchstr =", matchstr)
+					matchresult = re.match(matchstr, f)
+					if matchresult:
+						num = int(matchresult.group(1))
+						if lastnum < num:
+							lastnum = num
+						print("+++ match: '{}', num={}".format(f, num))
+					else:
+						print('+++ not match:', f)
+				sshotcnt = lastnum + 1
+		else:
+			sshotcnt += 1
+		sshotfile = ScreenShotFName + str(sshotcnt) + ScreenShotType
+		print("++++ save screenshot to file: '"+sshotfile+"': '{}' + '{}' + '{}'".format(ScreenShotFName, str(sshotcnt), ScreenShotType))
+		cv2.imwrite(sshotfile, frame)
 	N_value = int(values['-N_slide-'])
 	S_color = values['-color-']
 	N_mul = int(values['-N_mul-'])
@@ -92,7 +122,6 @@ while True:
 		N_type = 2
 	elif values['-type_3-']:
 		N_type = 3
-	print(values)
 	if (N_value != old_N) or (old_color != S_color) or (old_mul != N_mul) or (N_type != old_type):
 		if S_color != old_color:
 			old_color = S_color
