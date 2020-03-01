@@ -24,9 +24,9 @@ ANIMFNAME	  = 'anim.gif'
 # --- Global Vars
 
 Inverted 	= False
-color 		= [0,220,255]
+COLOR 		= [0,220,255]
 old_N     	= -1
-old_color 	= -1
+old_COLOR 	= -1
 old_mul   	= -1
 old_type  	= -1
 SSHOTCNT  	= -1
@@ -39,7 +39,7 @@ def viewImage(image, name_of_window):
 	cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
 	cv2.imshow(name_of_window, image)
 	
-def GetColor(col):
+def GetCOLOR(col):
 	R = min(255, int(300*sin(pi*float(col)/MAXCOLORRANGE)))
 	G = min(255, max(0, int(300*sin(pi*float(col + MAXCOLORRANGE//3)/MAXCOLORRANGE))))
 	B = min(255, max(0, int(300*sin(pi*float(col - MAXCOLORRANGE//3)/MAXCOLORRANGE))))
@@ -76,24 +76,24 @@ def ImgDraw(image, type, value, nmul, inverted=False):
 		y2 = int(Y0 - RADIUS * sin(beta))
 		return (x1,y1),(x2,y2)
 	frame = image.copy()
-	frame = cv2.circle(frame, (WIDTH//2, HEIGHT//2), RADIUS, color, 2)
+	frame = cv2.circle(frame, (WIDTH//2, HEIGHT//2), RADIUS, COLOR, 2)
 	if  type== 1:
 		for i in range(value):
 			for j in range(value):
 				k = (j * nmul) % value
 				if i != k:
 					p1,p2 = mmul(i,k)
-					frame = cv2.line(frame, p1, p2, color, 1)
+					frame = cv2.line(frame, p1, p2, COLOR, 1)
 	elif type == 2:
 		for i in range(value):
 			j = i * (nmul + 1) % value
 			p1, p2 = mmul(i,j)
-			frame = cv2.line(frame, p1, p2, color, 1)
+			frame = cv2.line(frame, p1, p2, COLOR, 1)
 	elif type == 3:
 		for i in range(value):
 			j = (i + nmul) % value
 			p1, p2 = mmul(i,j)
-			frame = cv2.line(frame, p1, p2, color, 1)
+			frame = cv2.line(frame, p1, p2, COLOR, 1)
 	if inverted:
 		frame = cv2.bitwise_not(frame)
 	return frame
@@ -115,8 +115,8 @@ SlideLayout = [[
 		sg.Text('Pass:', size=(6,1)), 
 		sg.Slider(range=(P_MIN,MAXN), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-P_mul-')
 	],[
-		sg.Text('Color:', size=(6,1)),
-		sg.Slider(range=(1,MAXCOLORRANGE), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-color-')
+		sg.Text('COLOR:', size=(6,1)),
+		sg.Slider(range=(1,MAXCOLORRANGE), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-COLOR-')
 ]]
 
 MainLayout = [[
@@ -156,7 +156,7 @@ image = np.zeros((HEIGHT, WIDTH, 3), dtype="uint8")
 while True:
 	event, values = MainWindow.Read(timeout=10)
 	N_value = int(values['-N_slide-'])
-	S_color = values['-color-']
+	S_COLOR = values['-COLOR-']
 	P_mul = int(values['-P_mul-'])
 	if values['-type_1-']:
 		N_type = 1
@@ -179,14 +179,19 @@ while True:
 			],[
 			sg.Text('To: ', size=(4,1)),
 			sg.Input(str(MAXN), size=(5,1), key='-a_to-'),
+			],[
+			sg.Text('Step: ', size=(4,1)),
+			sg.Input(str(1), size=(5,1), key='-a_stp-'),
 		]]
 
 		AnimDlgLayoutR = [[
-			sg.Radio('N',    'animate_for', pad=(10,1), default=True, key='-a_n-'),
+			sg.Radio('N',    'animate_for', pad=(10,1), default=True, enable_events=True, key='-a_n-'),
 			],[
-			sg.Radio('Pass', 'animate_for', pad=(10,1), key='-a_p-'),
+			sg.Radio('Pass', 'animate_for', pad=(10,1),  enable_events=True, key='-a_p-'),
 			],[
-			sg.Radio('Angle', 'animate_for', pad=(10,1), key='-a_a-'),
+			sg.Radio('Angle', 'animate_for', pad=(10,1),  enable_events=True, key='-a_a-'),
+			],[
+			sg.Radio('Color', 'animate_for', pad=(10,1),  enable_events=True, key='-a_c-'),
 		]]
 		
 		AnimDialog = sg.Window(
@@ -221,14 +226,39 @@ while True:
 		) 
 		
 		AnimDialogFromVal = AnimDialog['-a_from-']
-		aevnt, ares = AnimDialog.Read()
+		AnimDialogToVal = AnimDialog['-a_to-']
+		AnimDialogStpVal = AnimDialog['-a_stp-']
+		
+		while True:
+			aevnt, ares = AnimDialog.Read()
+			if aevnt == 'Ok' or aevnt == 'Cancel' or aevnt == None:
+				break
+			elif aevnt == '-a_n-':
+				AnimDialogFromVal.update(N_value)
+				AnimDialogToVal.update(MAXN)
+				AnimDialogStpVal.update(1)
+			elif aevnt == '-a_p-':
+				AnimDialogFromVal.update(P_mul)
+				AnimDialogToVal.update(MAXN)
+				AnimDialogStpVal.update(1)
+			elif aevnt == '-a_a-':
+				AnimDialogFromVal.update(0)
+				AnimDialogToVal.update(360)
+				AnimDialogStpVal.update(5)
+			elif aevnt == '-a_c-':
+				AnimDialogFromVal.update(1)
+				AnimDialogToVal.update(MAXCOLORRANGE)
+				AnimDialogStpVal.update(MAXCOLORRANGE // 20 )
 		AnimDialog.close()
 		
 		if aevnt == 'Ok':
 			afrom = int(ares['-a_from-'])
 			ato   = int(ares['-a_to-'])
+			astep = int(ares['-a_stp-'])
 			if afrom >= ato:
 				sg.PopupError("'From' value must be lower then 'To'!")
+			elif astep > (ato - afrom):
+				sg.PopupError("Step value too big!")
 			else:
 				if ares['-a_n-']:
 					if afrom < N_MIN:
@@ -251,8 +281,8 @@ while True:
 				AnimProgressBar = AnimProgressWnd['-animprogress-']
 				AnimProgressVal = AnimProgressWnd['-a_value-']
 				
-				for i in range(afrom, ato+1):
-					eprogress, vprogress = AnimProgressWnd.read(timeout=10)
+				for i in range(afrom, ato+1, astep):
+					eprogress, vprogress = AnimProgressWnd.read(timeout=5)
 					if eprogress == 'Cancel':
 						break;
 					AnimProgressBar.UpdateBar(i-afrom)
@@ -261,16 +291,20 @@ while True:
 						N_value = i
 					elif ares['-a_p-']:
 						P_mul = i
-					
+					elif ares['-a_a-']:
+						pass
+					elif ares['-a_c-']:
+						S_COLOR = i
+						COLOR = GetCOLOR(i)
 					frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
 					imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 					image_elem.update(data=imgbytes)
 				AnimProgressWnd.close()
 
-	if (N_value != old_N) or (old_color != S_color) or (old_mul != P_mul) or (N_type != old_type):
-		if S_color != old_color:
-			old_color = S_color
-			color = GetColor(S_color)
+	if (N_value != old_N) or (old_COLOR != S_COLOR) or (old_mul != P_mul) or (N_type != old_type):
+		if S_COLOR != old_COLOR:
+			old_COLOR = S_COLOR
+			COLOR = GetCOLOR(S_COLOR)
 		elif old_N != N_value:
 			old_N = N_value
 		elif old_mul != P_mul:
