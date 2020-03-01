@@ -19,6 +19,7 @@ MAXCOLORRANGE = 100
 BTNPADX 	  = 40
 SCRSHOTFNAME  = 'sshot'
 SCRSHOTFTYPE  = '.png'
+ANIMFNAME	  = 'anim.gif'
 
 # --- Global Vars
 
@@ -29,6 +30,10 @@ old_color 	= -1
 old_mul   	= -1
 old_type  	= -1
 SSHOTCNT  	= -1
+N_MIN 	    = 3
+P_MIN		= 1
+
+# --- Procedures
 
 def viewImage(image, name_of_window):
 	cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
@@ -93,6 +98,8 @@ def ImgDraw(image, type, value, nmul, inverted=False):
 		frame = cv2.bitwise_not(frame)
 	return frame
 
+# --- GUI 
+
 TypeLayout = [[
 		sg.Radio('1', 'radio_folders', pad=(10,3), default='1', key='-type_1-'),
 	],[
@@ -103,10 +110,10 @@ TypeLayout = [[
 	
 SlideLayout = [[
 		sg.Text('N:', size=(6,1)), 
-		sg.Slider(range=(3,MAXN), disable_number_display=True, default_value=3, orientation='h', size=(54,20), key='-N_slide-')
+		sg.Slider(range=(N_MIN,MAXN), disable_number_display=True, default_value=3, orientation='h', size=(54,20), key='-N_slide-')
 	],[
 		sg.Text('Pass:', size=(6,1)), 
-		sg.Slider(range=(1,MAXN), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-N_mul-')
+		sg.Slider(range=(P_MIN,MAXN), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-P_mul-')
 	],[
 		sg.Text('Color:', size=(6,1)),
 		sg.Slider(range=(1,MAXCOLORRANGE), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-color-')
@@ -135,18 +142,28 @@ MainLayout = [[
 		),	
 	],[
 		sg.Button('Screenshot', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-scrshot-'),
-		sg.Button('SeriesShot', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-srsshot-'),
+		sg.Button('Animation', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-animate-'),
 		sg.Button('Invert', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-invert-'),
 		sg.Button('Exit', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14')
 ]]
 
-window = sg.Window('Circle of multiplications', MainLayout, no_titlebar=False, location=(0,0))
+# --- Main Program
+
+MainWindow = sg.Window('Circle of multiplications', MainLayout, no_titlebar=False, location=(0,0))
+image_elem  = MainWindow['-image-']
 image = np.zeros((HEIGHT, WIDTH, 3), dtype="uint8")
-frame = image.copy()
-image_elem  = window['-image-']
 
 while True:
-	event, values = window.read(timeout=25)
+	event, values = MainWindow.Read(timeout=10)
+	N_value = int(values['-N_slide-'])
+	S_color = values['-color-']
+	P_mul = int(values['-P_mul-'])
+	if values['-type_1-']:
+		N_type = 1
+	elif values['-type_2-']:
+		N_type = 2
+	elif values['-type_3-']:
+		N_type = 3	
 	if event == 'Exit' or event == None:
 		break
 	elif event == '-invert-':
@@ -154,28 +171,114 @@ while True:
 		old_type = -1
 	elif event == '-scrshot-':
 		TakeScrShot()
-		pass
-	elif event == '-srsshot-':
-		pass
-	N_value = int(values['-N_slide-'])
-	S_color = values['-color-']
-	N_mul = int(values['-N_mul-'])
-	if values['-type_1-']:
-		N_type = 1
-	elif values['-type_2-']:
-		N_type = 2
-	elif values['-type_3-']:
-		N_type = 3
-	if (N_value != old_N) or (old_color != S_color) or (old_mul != N_mul) or (N_type != old_type):
+	elif event == '-animate-':
+		
+		AnimDlgLayoutL = [[
+			sg.Text('From: ', size=(4,1)),
+			sg.Input(str(N_value), size=(5,1), key='-a_from-'),
+			],[
+			sg.Text('To: ', size=(4,1)),
+			sg.Input(str(MAXN), size=(5,1), key='-a_to-'),
+		]]
+
+		AnimDlgLayoutR = [[
+			sg.Radio('N',    'animate_for', pad=(10,1), default=True, key='-a_n-'),
+			],[
+			sg.Radio('Pass', 'animate_for', pad=(10,1), key='-a_p-'),
+		]]
+		
+		AnimDialog = sg.Window(
+			'Animation',
+			[[
+				sg.Text('Save to:'),
+				sg.Input(ANIMFNAME, size=(14,1)),
+				sg.FileSaveAs(file_types=(('GIF','*.gif'),('ALL Files', '*.*'),))
+			],[
+				sg.Frame(
+					' Frames: ', 
+					AnimDlgLayoutL, 
+					font='Any 11', 
+					title_color='yellow', 
+					pad=(5,5),
+					element_justification = 'left',
+					title_location = sg.TITLE_LOCATION_TOP,
+				),
+				sg.Frame(
+					' Select Type: ', 
+					AnimDlgLayoutR,
+					font='Any 11', 
+					title_color='yellow', 
+					pad=(5,5),
+					element_justification = 'left',
+					title_location = sg.TITLE_LOCATION_TOP,
+				),
+			],[
+				sg.Ok(pad=(30,10), size=(8,1)),
+				sg.Cancel(pad=(5,1), size=(8,1))
+			]]
+		) 
+		
+		AnimDialogFromVal = AnimDialog['-a_from-']
+		aevnt, ares = AnimDialog.Read()
+		AnimDialog.close()
+		
+		if aevnt == 'Ok':
+			afrom = int(ares['-a_from-'])
+			ato   = int(ares['-a_to-'])
+			if afrom >= ato:
+				sg.PopupError("'From' value must be lower then 'To'!")
+			else:
+				if ares['-a_n-']:
+					if afrom < N_MIN:
+						afrom = N_MIN
+				elif ares['-a_p-']:
+					if afrom < P_MIN:
+						afrom = P_MIN
+						
+				AnimProgressLayout = [[
+					sg.Text('Progress:'),
+					sg.Text('', size=(4,1), key='-a_value-')
+				],[
+					sg.ProgressBar(ato - afrom, orientation='h', size=(20, 20), key='-animprogress-')
+				],[
+					sg.Cancel()
+				]]
+				
+				AnimProgressWnd = sg.Window('Create animation', AnimProgressLayout)
+				
+				AnimProgressBar = AnimProgressWnd['-animprogress-']
+				AnimProgressVal = AnimProgressWnd['-a_value-']
+				
+				for i in range(afrom, ato+1):
+					eprogress, vprogress = AnimProgressWnd.read(timeout=10)
+					if eprogress == 'Cancel':
+						break;
+					AnimProgressBar.UpdateBar(i)
+					AnimProgressVal.update(str(i))
+					print(i, flush=True, end=' ')
+					if ares['-a_n-']:
+						print('type:N', flush=True, end=' ')
+						N_value = i
+					elif ares['-a_p-']:
+						print('type:P', flush=True, end=' ')
+						P_mul = i
+					print("N_type:{} N_value:{} P_mul:{}".format(N_type, N_value, P_mul), flush=True)
+					
+					frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
+					imgbytes = cv2.imencode('.png', frame)[1].tobytes()
+					image_elem.update(data=imgbytes)
+				AnimProgressWnd.close()
+
+	if (N_value != old_N) or (old_color != S_color) or (old_mul != P_mul) or (N_type != old_type):
 		if S_color != old_color:
 			old_color = S_color
 			color = GetColor(S_color)
 		elif old_N != N_value:
 			old_N = N_value
-		elif old_mul != N_mul:
-			old_mul = N_mul
+		elif old_mul != P_mul:
+			old_mul = P_mul
 		elif old_type != N_type:
 			old_type = N_type
-		frame = ImgDraw(image, N_type, N_value, N_mul, inverted=Inverted)
+		frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
 		imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 		image_elem.update(data=imgbytes)
