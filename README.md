@@ -3,7 +3,7 @@ Circle of multiplication
 
 Worked program looks like this:
 
-![sshot0.png](img/sshot0.png)
+![sshot00.png](img/sshot00.png)
 
 You can save screenshot of by pressing corresponding button.
 
