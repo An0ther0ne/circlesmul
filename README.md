@@ -12,6 +12,7 @@ Some screenshots:
 ![animated1.gif](img/animated1.gif)
 ![animated2.gif](img/animated2.gif)
 ![animated3.gif](img/animated3.gif)
+![animated4.gif](img/animated4.gif)
 ![sshot1.png](img/sshot1.png)
 ![sshot2.png](img/sshot2.png)
 ![sshot3.png](img/sshot3.png)
