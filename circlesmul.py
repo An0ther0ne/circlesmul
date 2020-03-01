@@ -4,6 +4,7 @@ import os
 import re
 import numpy as np
 import cv2
+from PIL import Image
 import PySimpleGUI 	as sg
 from math import sin, cos, pi
 
@@ -66,10 +67,10 @@ def TakeScrShot():
 	sshotfile = SCRSHOTFNAME + str(SSHOTCNT) + SCRSHOTFTYPE
 	cv2.imwrite(sshotfile, frame)
 	
-def ImgDraw(image, type, value, nmul, inverted=False):
+def ImgDraw(image, type, value, nmul, inverted=False, rshift=0, ashift=0):
 	def mmul(i,j):
-		alfa = i * 2 * pi / value
-		beta = j * 2 * pi / value
+		alfa = i * 2 * pi / value + rshift + ashift
+		beta = j * 2 * pi / value + rshift
 		x1 = int(X0 + RADIUS * cos(alfa))
 		y1 = int(Y0 - RADIUS * sin(alfa))
 		x2 = int(X0 + RADIUS * cos(beta))
@@ -86,7 +87,7 @@ def ImgDraw(image, type, value, nmul, inverted=False):
 					frame = cv2.line(frame, p1, p2, COLOR, 1)
 	elif type == 2:
 		for i in range(value):
-			j = i * (nmul + 1) % value
+			j = (i * (nmul + 1)) % value
 			p1, p2 = mmul(i,j)
 			frame = cv2.line(frame, p1, p2, COLOR, 1)
 	elif type == 3:
@@ -189,7 +190,9 @@ while True:
 			],[
 			sg.Radio('Pass', 'animate_for', pad=(10,1),  enable_events=True, key='-a_p-'),
 			],[
-			sg.Radio('Angle', 'animate_for', pad=(10,1),  enable_events=True, key='-a_a-'),
+			sg.Radio('RotAngle', 'animate_for', pad=(10,1),  enable_events=True, key='-a_ar-'),
+			],[
+			sg.Radio('Shift', 'animate_for', pad=(10,1),  enable_events=True, key='-a_as-'),
 			],[
 			sg.Radio('Color', 'animate_for', pad=(10,1),  enable_events=True, key='-a_c-'),
 		]]
@@ -198,8 +201,10 @@ while True:
 			'Animation',
 			[[
 				sg.Text('Save to:'),
-				sg.Input(ANIMFNAME, size=(14,1)),
-				sg.FileSaveAs(file_types=(('GIF','*.gif'),('ALL Files', '*.*'),))
+				sg.Input(ANIMFNAME, size=(27,1), key='-afname-'),
+			],[
+				sg.Checkbox('Half Size', default=True, size=(16,1), key='-half-'),
+				sg.FileSaveAs(file_types=(('GIF','*.gif'),('ALL Files', '*.*'),), size=(10,1)),
 			],[
 				sg.Frame(
 					' Frames: ', 
@@ -211,7 +216,7 @@ while True:
 					title_location = sg.TITLE_LOCATION_TOP,
 				),
 				sg.Frame(
-					' Select Type: ', 
+					' Animation Type: ', 
 					AnimDlgLayoutR,
 					font='Any 11', 
 					title_color='yellow', 
@@ -220,8 +225,8 @@ while True:
 					title_location = sg.TITLE_LOCATION_TOP,
 				),
 			],[
-				sg.Ok(pad=(30,10), size=(8,1)),
-				sg.Cancel(pad=(5,1), size=(8,1))
+				sg.Ok(pad=(30,10), size=(10,1)),
+				sg.Cancel(pad=(5,1), size=(10,1))
 			]]
 		) 
 		
@@ -241,10 +246,14 @@ while True:
 				AnimDialogFromVal.update(P_mul)
 				AnimDialogToVal.update(MAXN)
 				AnimDialogStpVal.update(1)
-			elif aevnt == '-a_a-':
+			elif aevnt == '-a_ar-':
 				AnimDialogFromVal.update(0)
 				AnimDialogToVal.update(360)
-				AnimDialogStpVal.update(5)
+				AnimDialogStpVal.update(1)
+			elif aevnt == '-a_as-':
+				AnimDialogFromVal.update(0)
+				AnimDialogToVal.update(360)
+				AnimDialogStpVal.update(1)				
 			elif aevnt == '-a_c-':
 				AnimDialogFromVal.update(1)
 				AnimDialogToVal.update(MAXCOLORRANGE)
@@ -252,9 +261,10 @@ while True:
 		AnimDialog.close()
 		
 		if aevnt == 'Ok':
-			afrom = int(ares['-a_from-'])
-			ato   = int(ares['-a_to-'])
-			astep = int(ares['-a_stp-'])
+			afrom  = int(ares['-a_from-'])
+			ato    = int(ares['-a_to-'])
+			astep  = int(ares['-a_stp-'])
+			afname = ares['-afname-']
 			if afrom >= ato:
 				sg.PopupError("'From' value must be lower then 'To'!")
 			elif astep > (ato - afrom):
@@ -281,25 +291,47 @@ while True:
 				AnimProgressBar = AnimProgressWnd['-animprogress-']
 				AnimProgressVal = AnimProgressWnd['-a_value-']
 				
+				frames = []
+				
 				for i in range(afrom, ato+1, astep):
 					eprogress, vprogress = AnimProgressWnd.read(timeout=5)
 					if eprogress == 'Cancel':
 						break;
 					AnimProgressBar.UpdateBar(i-afrom)
 					AnimProgressVal.update(str(i))
-					if ares['-a_n-']:
-						N_value = i
-					elif ares['-a_p-']:
-						P_mul = i
-					elif ares['-a_a-']:
-						pass
-					elif ares['-a_c-']:
-						S_COLOR = i
-						COLOR = GetCOLOR(i)
-					frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
+					if ares['-a_ar-']:
+						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, rshift=i * pi / 180)
+					elif ares['-a_as-']:
+						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, ashift=i * pi / 360)
+					else:
+						if ares['-a_n-']:
+							N_value = i
+						elif ares['-a_p-']:
+							P_mul = i
+						elif ares['-a_c-']:
+							S_COLOR = i
+							COLOR = GetCOLOR(i)
+						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
 					imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 					image_elem.update(data=imgbytes)
+					if ares['-half-']:
+						aheight, awidth = frame.shape[:2]
+						# interpolation: INTER_LINEAR, INTER_NEAREST, INTER_AREA, INTER_CUBIC, INTER_LANCZOS4
+						frame = cv2.resize(frame, (awidth//2, aheight//2), interpolation = cv2.INTER_LINEAR)
+					pilimg = Image.fromarray(frame)
+					frames.append(pilimg)
+					
 				AnimProgressWnd.close()
+				
+				frames[0].save(
+					afname,
+					save_all=True, 
+					append_images=frames[1:], 
+					optimize=False, 
+					duration=16, 
+					loop=0)
+				del frames[:]
+				del frames
 
 	if (N_value != old_N) or (old_COLOR != S_COLOR) or (old_mul != P_mul) or (N_type != old_type):
 		if S_COLOR != old_COLOR:

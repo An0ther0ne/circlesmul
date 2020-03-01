@@ -29,6 +29,7 @@ Some screenshots:
 * NumPY
 * OpenCV
 * PySimpleGUI
+* Pillow (for save to GIF feature)
 
 ## Files:
 	
