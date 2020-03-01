@@ -252,7 +252,7 @@ while True:
 				AnimDialogStpVal.update(1)
 			elif aevnt == '-a_as-':
 				AnimDialogFromVal.update(0)
-				AnimDialogToVal.update(360)
+				AnimDialogToVal.update(720)
 				AnimDialogStpVal.update(1)				
 			elif aevnt == '-a_c-':
 				AnimDialogFromVal.update(1)
@@ -318,7 +318,7 @@ while True:
 						aheight, awidth = frame.shape[:2]
 						# interpolation: INTER_LINEAR, INTER_NEAREST, INTER_AREA, INTER_CUBIC, INTER_LANCZOS4
 						frame = cv2.resize(frame, (awidth//2, aheight//2), interpolation = cv2.INTER_LINEAR)
-					pilimg = Image.fromarray(frame)
+					pilimg = Image.fromarray(frame, mode='RGB')
 					frames.append(pilimg)
 					
 				AnimProgressWnd.close()
