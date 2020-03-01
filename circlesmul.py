@@ -7,14 +7,20 @@ import cv2
 import PySimpleGUI 	as sg
 from math import sin, cos, pi
 
-width  = 800
-height = width
-x0 = width / 2
-y0 = height / 2
-Radius = (width - 10) // 2
+# --- Globals
+
+WIDTH  = 800
+HEIGHT = WIDTH
+X0 = WIDTH / 2
+Y0 = HEIGHT / 2
+RADIUS = (WIDTH - 10) // 2
+MAXN = 128
+
 ScreenShotFName = 'sshot'
 ScreenShotType  = '.png'
 Inverted = False
+
+# --- 
 
 def viewImage(image, name_of_window):
 	cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
@@ -33,10 +39,10 @@ typelayout = [[
 	
 slidelayout = [[
 		sg.Text('N:', size=(6,1)), 
-		sg.Slider(range=(3,64), disable_number_display=True, default_value=3, orientation='h', size=(54,20), key='-N_slide-')
+		sg.Slider(range=(3,MAXN), disable_number_display=True, default_value=3, orientation='h', size=(54,20), key='-N_slide-')
 	],[
 		sg.Text('Pass:', size=(6,1)), 
-		sg.Slider(range=(1,64), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-N_mul-')
+		sg.Slider(range=(1,MAXN), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-N_mul-')
 	],[
 		sg.Text('Color:', size=(6,1)),
 		sg.Slider(range=(1,maxcolorrange), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-color-')
@@ -70,7 +76,7 @@ layout = [[
 	],]
 
 window = sg.Window('Circle of multiplications', layout, no_titlebar=False, location=(0,0))
-image = np.zeros((height, width, 3), dtype="uint8")
+image = np.zeros((HEIGHT, WIDTH, 3), dtype="uint8")
 frame = image.copy()
 image_elem  = window['-image-']
 
@@ -83,10 +89,10 @@ sshotcnt  = -1
 def mmul(i,j):
 	alfa = i * 2 * pi / N_value
 	beta = j * 2 * pi / N_value
-	x1 = int(x0 + Radius * cos(alfa))
-	y1 = int(y0 - Radius * sin(alfa))
-	x2 = int(x0 + Radius * cos(beta))
-	y2 = int(y0 - Radius * sin(beta))
+	x1 = int(X0 + RADIUS * cos(alfa))
+	y1 = int(Y0 - RADIUS * sin(alfa))
+	x2 = int(X0 + RADIUS * cos(beta))
+	y2 = int(Y0 - RADIUS * sin(beta))
 	return (x1,y1),(x2,y2)
 
 while True:
@@ -138,7 +144,7 @@ while True:
 		elif old_type != N_type:
 			old_type = N_type
 		frame = image.copy()
-		frame = cv2.circle(frame, (width//2, height//2), Radius, color, 2)
+		frame = cv2.circle(frame, (WIDTH//2, HEIGHT//2), RADIUS, color, 2)
 		if N_type == 1:
 			for i in range(N_value):
 				for j in range(N_value):
