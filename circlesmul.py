@@ -185,6 +185,8 @@ while True:
 			sg.Radio('N',    'animate_for', pad=(10,1), default=True, key='-a_n-'),
 			],[
 			sg.Radio('Pass', 'animate_for', pad=(10,1), key='-a_p-'),
+			],[
+			sg.Radio('Angle', 'animate_for', pad=(10,1), key='-a_a-'),
 		]]
 		
 		AnimDialog = sg.Window(
@@ -253,16 +255,12 @@ while True:
 					eprogress, vprogress = AnimProgressWnd.read(timeout=10)
 					if eprogress == 'Cancel':
 						break;
-					AnimProgressBar.UpdateBar(i)
+					AnimProgressBar.UpdateBar(i-afrom)
 					AnimProgressVal.update(str(i))
-					print(i, flush=True, end=' ')
 					if ares['-a_n-']:
-						print('type:N', flush=True, end=' ')
 						N_value = i
 					elif ares['-a_p-']:
-						print('type:P', flush=True, end=' ')
 						P_mul = i
-					print("N_type:{} N_value:{} P_mul:{}".format(N_type, N_value, P_mul), flush=True)
 					
 					frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
 					imgbytes = cv2.imencode('.png', frame)[1].tobytes()
