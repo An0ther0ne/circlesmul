@@ -327,8 +327,8 @@ while True:
 					afname,
 					save_all=True, 
 					append_images=frames[1:], 
-					optimize=False, 
-					duration=16, 
+					optimize=True, 
+					duration=40, 
 					loop=0)
 				del frames[:]
 				del frames
