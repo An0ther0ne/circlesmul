@@ -26,10 +26,11 @@ ANIMFNAME	  = 'anim.gif'
 
 Inverted 	= False
 color 		= [0,220,255]
-old_N     	= -1
-old_color 	= -1
-old_mul   	= -1
 old_type  	= -1
+old_N     	= -1
+old_mul   	= -1
+old_shift	= -1
+old_color 	= -1
 SSHOTCNT  	= -1
 N_MIN 	    = 3
 P_MIN		= 1
@@ -65,8 +66,8 @@ def TakeScrShot():
 
 def ImgDraw(img, itype, value, nmul, inverted=False, rshift=0, ashift=0):
 	def mmul(i,j):
-		alfa = i * 2 * pi / value + rshift + ashift
-		beta = j * 2 * pi / value + rshift
+		alfa = i * 2 * pi / value + (rshift + ashift) * pi / 360
+		beta = j * 2 * pi / value + rshift * pi / 360
 		x1 = int(X0 + RADIUS * cos(alfa))
 		y1 = int(Y0 - RADIUS * sin(alfa))
 		x2 = int(X0 + RADIUS * cos(beta))
@@ -98,11 +99,11 @@ def ImgDraw(img, itype, value, nmul, inverted=False, rshift=0, ashift=0):
 # --- GUI
 
 TypeLayout = [[
-		sg.Radio('1', 'radio_folders', pad=(10,3), default='1', key='-type_1-'),
+		sg.Radio('1', 'radio_folders', pad=(10,2), default='1', key='-type_1-'),
 	],[
-		sg.Radio('2', 'radio_folders', pad=(10,3), key='-type_2-')
+		sg.Radio('2', 'radio_folders', pad=(10,2), key='-type_2-')
 	],[
-		sg.Radio('3', 'radio_folders', pad=(10,3), key='-type_3-')
+		sg.Radio('3', 'radio_folders', pad=(10,2), key='-type_3-')
 ]]
 
 SlideLayout = [[
@@ -111,6 +112,9 @@ SlideLayout = [[
 	],[
 		sg.Text('Pass:', size=(6,1)),
 		sg.Slider(range=(P_MIN,MAXN), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-P_mul-')
+	],[
+		sg.Text('Shift:', size=(6,1)),
+		sg.Slider(range=(0, 720), disable_number_display=True, default_value=0, orientation='h', size=(54,20), key='-S_hift-')
 	],[
 		sg.Text('Color:', size=(6,1)),
 		sg.Slider(range=(1,MAXcolorRANGE), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-color-')
@@ -124,7 +128,7 @@ MainLayout = [[
 			SlideLayout,
 			font='Any 11',
 			title_color='blue',
-			pad=(5,10),
+			pad=(5,2),
 			element_justification = 'left',
 			title_location = sg.TITLE_LOCATION_TOP_LEFT,
 		),
@@ -133,15 +137,15 @@ MainLayout = [[
 			TypeLayout,
 			font='Any 11',
 			title_color='blue',
-			pad=(5,10),
+			pad=(5,2),
 			element_justification = 'left',
 			title_location = sg.TITLE_LOCATION_TOP,
 		),
 	],[
-		sg.Button('Screenshot', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-scrshot-'),
-		sg.Button('Animation', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-animate-'),
-		sg.Button('Invert', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-invert-'),
-		sg.Button('Exit', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14')
+		sg.Button('Screenshot', size=(10,1), pad=(BTNPADX,2), font='Hevletica 14', key='-scrshot-'),
+		sg.Button('Animation', size=(10,1), pad=(BTNPADX,2), font='Hevletica 14', key='-animate-'),
+		sg.Button('Invert', size=(10,1), pad=(BTNPADX,2), font='Hevletica 14', key='-invert-'),
+		sg.Button('Exit', size=(10,1), pad=(BTNPADX,2), font='Hevletica 14')
 ]]
 
 # --- Main Program
@@ -155,6 +159,7 @@ while True:
 	N_value = int(values['-N_slide-'])
 	S_color = values['-color-']
 	P_mul = int(values['-P_mul-'])
+	S_hift = int(values['-S_hift-'])
 	if values['-type_1-']:
 		N_type = 1
 	elif values['-type_2-']:
@@ -244,10 +249,10 @@ while True:
 				AnimDialogStpVal.update(1)
 			elif aevnt == '-a_ar-':
 				AnimDialogFromVal.update(0)
-				AnimDialogToVal.update(360)
+				AnimDialogToVal.update(720)
 				AnimDialogStpVal.update(1)
 			elif aevnt == '-a_as-':
-				AnimDialogFromVal.update(0)
+				AnimDialogFromVal.update(S_hift)
 				AnimDialogToVal.update(720)
 				AnimDialogStpVal.update(1)
 			elif aevnt == '-a_c-':
@@ -296,9 +301,10 @@ while True:
 					AnimProgressBar.UpdateBar(i-afrom)
 					AnimProgressVal.update(str(i))
 					if ares['-a_ar-']:
-						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, rshift=i * pi / 180)
+						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, ashift=S_hift, rshift=i)
 					elif ares['-a_as-']:
-						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, ashift=i * pi / 360)
+						S_hift = i
+						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, ashift=i)
 					else:
 						if ares['-a_n-']:
 							N_value = i
@@ -307,7 +313,7 @@ while True:
 						elif ares['-a_c-']:
 							S_color = i
 							color = GetColor(i)
-						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
+						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, ashift=S_hift)
 					imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 					image_elem.update(data=imgbytes)
 					if ares['-half-']:
@@ -329,7 +335,7 @@ while True:
 				del frames[:]
 				del frames
 
-	if (N_value != old_N) or (old_color != S_color) or (old_mul != P_mul) or (N_type != old_type):
+	if (N_value != old_N) or (old_color != S_color) or (old_mul != P_mul) or (N_type != old_type) or (old_shift != S_hift):
 		if S_color != old_color:
 			old_color = S_color
 			color = GetColor(S_color)
@@ -339,6 +345,8 @@ while True:
 			old_mul = P_mul
 		elif old_type != N_type:
 			old_type = N_type
-		frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
+		elif old_shift != S_hift:
+			old_shift = S_hift
+		frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted, ashift=S_hift)
 		imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 		image_elem.update(data=imgbytes)
