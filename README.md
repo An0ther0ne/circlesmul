@@ -16,6 +16,7 @@ Some screenshots:
 ![animated5.gif](img/animated5.gif)
 ![animated6.gif](img/animated6.gif)
 ![animated7.gif](img/animated7.gif)
+![animated7.gif](img/animated8.gif)
 ![sshot1.png](img/sshot1.png)
 ![sshot2.png](img/sshot2.png)
 ![sshot3.png](img/sshot3.png)
@@ -40,6 +41,7 @@ Some screenshots:
 ## Files:
 	
 * [circlesmul.py](circlesmul.py) - Main program
+* [pylint.config](pylint.config) - My custom PyLint-er config file for this project
 * README.md - This readme file
 * LICENSE - GNU GENERAL PUBLIC LICENSE
 

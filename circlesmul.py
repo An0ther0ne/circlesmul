@@ -2,11 +2,11 @@
 
 import os
 import re
+from math import sin, cos, pi
 import numpy as np
 import cv2
 from PIL import Image
 import PySimpleGUI 	as sg
-from math import sin, cos, pi
 
 # --- Global Constants
 
@@ -16,7 +16,7 @@ X0 			  = WIDTH / 2
 Y0 			  = HEIGHT / 2
 RADIUS 		  = (WIDTH - 10) // 2
 MAXN 		  = 128
-MAXCOLORRANGE = 100
+MAXcolorRANGE = 100
 BTNPADX 	  = 40
 SCRSHOTFNAME  = 'sshot'
 SCRSHOTFTYPE  = '.png'
@@ -25,9 +25,9 @@ ANIMFNAME	  = 'anim.gif'
 # --- Global Vars
 
 Inverted 	= False
-COLOR 		= [0,220,255]
+color 		= [0,220,255]
 old_N     	= -1
-old_COLOR 	= -1
+old_color 	= -1
 old_mul   	= -1
 old_type  	= -1
 SSHOTCNT  	= -1
@@ -36,16 +36,12 @@ P_MIN		= 1
 
 # --- Procedures
 
-def viewImage(image, name_of_window):
-	cv2.namedWindow(name_of_window, cv2.WINDOW_NORMAL)
-	cv2.imshow(name_of_window, image)
-	
-def GetCOLOR(col):
-	R = min(255, int(300*sin(pi*float(col)/MAXCOLORRANGE)))
-	G = min(255, max(0, int(300*sin(pi*float(col + MAXCOLORRANGE//3)/MAXCOLORRANGE))))
-	B = min(255, max(0, int(300*sin(pi*float(col - MAXCOLORRANGE//3)/MAXCOLORRANGE))))
-	return [B,G,R]	
-	
+def GetColor(col):
+	R = min(255, int(300*sin(pi*float(col)/MAXcolorRANGE)))
+	G = min(255, max(0, int(300*sin(pi*float(col + MAXcolorRANGE//3)/MAXcolorRANGE))))
+	B = min(255, max(0, int(300*sin(pi*float(col - MAXcolorRANGE//3)/MAXcolorRANGE))))
+	return [B,G,R]
+
 def TakeScrShot():
 	global SSHOTCNT
 	if SSHOTCNT <= 0:
@@ -66,8 +62,8 @@ def TakeScrShot():
 		SSHOTCNT += 1
 	sshotfile = SCRSHOTFNAME + str(SSHOTCNT) + SCRSHOTFTYPE
 	cv2.imwrite(sshotfile, frame)
-	
-def ImgDraw(image, type, value, nmul, inverted=False, rshift=0, ashift=0):
+
+def ImgDraw(img, itype, value, nmul, inverted=False, rshift=0, ashift=0):
 	def mmul(i,j):
 		alfa = i * 2 * pi / value + rshift + ashift
 		beta = j * 2 * pi / value + rshift
@@ -76,71 +72,71 @@ def ImgDraw(image, type, value, nmul, inverted=False, rshift=0, ashift=0):
 		x2 = int(X0 + RADIUS * cos(beta))
 		y2 = int(Y0 - RADIUS * sin(beta))
 		return (x1,y1),(x2,y2)
-	frame = image.copy()
-	frame = cv2.circle(frame, (WIDTH//2, HEIGHT//2), RADIUS, COLOR, 2)
-	if  type== 1:
+	frm = img.copy()
+	frm = cv2.circle(frm, (WIDTH//2, HEIGHT//2), RADIUS, color, 2)
+	if  itype== 1:
 		for i in range(value):
 			for j in range(value):
 				k = (j * nmul) % value
 				if i != k:
 					p1,p2 = mmul(i,k)
-					frame = cv2.line(frame, p1, p2, COLOR, 1)
-	elif type == 2:
+					frm = cv2.line(frm, p1, p2, color, 1)
+	elif itype == 2:
 		for i in range(value):
 			j = (i * (nmul + 1)) % value
-			p1, p2 = mmul(i,j)
-			frame = cv2.line(frame, p1, p2, COLOR, 1)
-	elif type == 3:
+			p1, p2 = mmul(i, j)
+			frm = cv2.line(frm, p1, p2, color, 1)
+	elif itype == 3:
 		for i in range(value):
 			j = (i + nmul) % value
-			p1, p2 = mmul(i,j)
-			frame = cv2.line(frame, p1, p2, COLOR, 1)
+			p1, p2 = mmul(i, j)
+			frm = cv2.line(frm, p1, p2, color, 1)
 	if inverted:
-		frame = cv2.bitwise_not(frame)
-	return frame
+		frm = cv2.bitwise_not(frm)
+	return frm
 
-# --- GUI 
+# --- GUI
 
 TypeLayout = [[
 		sg.Radio('1', 'radio_folders', pad=(10,3), default='1', key='-type_1-'),
 	],[
 		sg.Radio('2', 'radio_folders', pad=(10,3), key='-type_2-')
 	],[
-		sg.Radio('3', 'radio_folders', pad=(10,3), key='-type_3-')		
+		sg.Radio('3', 'radio_folders', pad=(10,3), key='-type_3-')
 ]]
-	
+
 SlideLayout = [[
-		sg.Text('N:', size=(6,1)), 
+		sg.Text('N:', size=(6,1)),
 		sg.Slider(range=(N_MIN,MAXN), disable_number_display=True, default_value=3, orientation='h', size=(54,20), key='-N_slide-')
 	],[
-		sg.Text('Pass:', size=(6,1)), 
+		sg.Text('Pass:', size=(6,1)),
 		sg.Slider(range=(P_MIN,MAXN), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-P_mul-')
 	],[
-		sg.Text('COLOR:', size=(6,1)),
-		sg.Slider(range=(1,MAXCOLORRANGE), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-COLOR-')
+		sg.Text('Color:', size=(6,1)),
+		sg.Slider(range=(1,MAXcolorRANGE), disable_number_display=True, default_value=1, orientation='h', size=(54,20), key='-color-')
 ]]
 
 MainLayout = [[
 		sg.Image(filename='', key='-image-')
 	],[
 		sg.Frame(
-			'Options:', 
-			SlideLayout, 
-			font='Any 11', 
-			title_color='blue', 
+			'Options:',
+			SlideLayout,
+			font='Any 11',
+			title_color='blue',
 			pad=(5,10),
 			element_justification = 'left',
 			title_location = sg.TITLE_LOCATION_TOP_LEFT,
 		),
 		sg.Frame(
-			'Method:', 
-			TypeLayout, 
-			font='Any 11', 
-			title_color='blue', 
+			'Method:',
+			TypeLayout,
+			font='Any 11',
+			title_color='blue',
 			pad=(5,10),
 			element_justification = 'left',
 			title_location = sg.TITLE_LOCATION_TOP,
-		),	
+		),
 	],[
 		sg.Button('Screenshot', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-scrshot-'),
 		sg.Button('Animation', size=(10,1), pad=(BTNPADX,10), font='Hevletica 14', key='-animate-'),
@@ -157,15 +153,15 @@ image = np.zeros((HEIGHT, WIDTH, 3), dtype="uint8")
 while True:
 	event, values = MainWindow.Read(timeout=10)
 	N_value = int(values['-N_slide-'])
-	S_COLOR = values['-COLOR-']
+	S_color = values['-color-']
 	P_mul = int(values['-P_mul-'])
 	if values['-type_1-']:
 		N_type = 1
 	elif values['-type_2-']:
 		N_type = 2
 	elif values['-type_3-']:
-		N_type = 3	
-	if event == 'Exit' or event == None:
+		N_type = 3
+	if event == 'Exit' or event is None:
 		break
 	elif event == '-invert-':
 		Inverted = not Inverted
@@ -173,7 +169,7 @@ while True:
 	elif event == '-scrshot-':
 		TakeScrShot()
 	elif event == '-animate-':
-		
+
 		AnimDlgLayoutL = [[
 			sg.Text('From: ', size=(4,1)),
 			sg.Input(str(N_value), size=(5,1), key='-a_from-'),
@@ -194,9 +190,9 @@ while True:
 			],[
 			sg.Radio('Shift', 'animate_for', pad=(10,1),  enable_events=True, key='-a_as-'),
 			],[
-			sg.Radio('Color', 'animate_for', pad=(10,1),  enable_events=True, key='-a_c-'),
+			sg.Radio('color', 'animate_for', pad=(10,1),  enable_events=True, key='-a_c-'),
 		]]
-		
+
 		AnimDialog = sg.Window(
 			'Animation',
 			[[
@@ -207,19 +203,19 @@ while True:
 				sg.FileSaveAs(file_types=(('GIF','*.gif'),('ALL Files', '*.*'),), size=(10,1)),
 			],[
 				sg.Frame(
-					' Frames: ', 
-					AnimDlgLayoutL, 
-					font='Any 11', 
-					title_color='yellow', 
+					' Frames: ',
+					AnimDlgLayoutL,
+					font='Any 11',
+					title_color='yellow',
 					pad=(5,5),
 					element_justification = 'left',
 					title_location = sg.TITLE_LOCATION_TOP,
 				),
 				sg.Frame(
-					' Animation Type: ', 
+					' Animation Type: ',
 					AnimDlgLayoutR,
-					font='Any 11', 
-					title_color='yellow', 
+					font='Any 11',
+					title_color='yellow',
 					pad=(5,5),
 					element_justification = 'left',
 					title_location = sg.TITLE_LOCATION_TOP,
@@ -228,15 +224,15 @@ while True:
 				sg.Ok(pad=(30,10), size=(10,1)),
 				sg.Cancel(pad=(5,1), size=(10,1))
 			]]
-		) 
-		
+		)
+
 		AnimDialogFromVal = AnimDialog['-a_from-']
 		AnimDialogToVal = AnimDialog['-a_to-']
 		AnimDialogStpVal = AnimDialog['-a_stp-']
-		
+
 		while True:
 			aevnt, ares = AnimDialog.Read()
-			if aevnt == 'Ok' or aevnt == 'Cancel' or aevnt == None:
+			if aevnt == 'Ok' or aevnt == 'Cancel' or aevnt is None:
 				break
 			elif aevnt == '-a_n-':
 				AnimDialogFromVal.update(N_value)
@@ -253,13 +249,13 @@ while True:
 			elif aevnt == '-a_as-':
 				AnimDialogFromVal.update(0)
 				AnimDialogToVal.update(720)
-				AnimDialogStpVal.update(1)				
+				AnimDialogStpVal.update(1)
 			elif aevnt == '-a_c-':
 				AnimDialogFromVal.update(1)
-				AnimDialogToVal.update(MAXCOLORRANGE)
-				AnimDialogStpVal.update(MAXCOLORRANGE // 20 )
+				AnimDialogToVal.update(MAXcolorRANGE)
+				AnimDialogStpVal.update(MAXcolorRANGE // 20 )
 		AnimDialog.close()
-		
+
 		if aevnt == 'Ok':
 			afrom  = int(ares['-a_from-'])
 			ato    = int(ares['-a_to-'])
@@ -276,7 +272,7 @@ while True:
 				elif ares['-a_p-']:
 					if afrom < P_MIN:
 						afrom = P_MIN
-						
+
 				AnimProgressLayout = [[
 					sg.Text('Progress:'),
 					sg.Text('', size=(4,1), key='-a_value-')
@@ -285,18 +281,18 @@ while True:
 				],[
 					sg.Cancel()
 				]]
-				
+
 				AnimProgressWnd = sg.Window('Create animation', AnimProgressLayout)
-				
+
 				AnimProgressBar = AnimProgressWnd['-animprogress-']
 				AnimProgressVal = AnimProgressWnd['-a_value-']
-				
+
 				frames = []
-				
+
 				for i in range(afrom, ato+1, astep):
 					eprogress, vprogress = AnimProgressWnd.read(timeout=5)
 					if eprogress == 'Cancel':
-						break;
+						break
 					AnimProgressBar.UpdateBar(i-afrom)
 					AnimProgressVal.update(str(i))
 					if ares['-a_ar-']:
@@ -309,8 +305,8 @@ while True:
 						elif ares['-a_p-']:
 							P_mul = i
 						elif ares['-a_c-']:
-							S_COLOR = i
-							COLOR = GetCOLOR(i)
+							S_color = i
+							color = GetColor(i)
 						frame = ImgDraw(image, N_type, N_value, P_mul, inverted=Inverted)
 					imgbytes = cv2.imencode('.png', frame)[1].tobytes()
 					image_elem.update(data=imgbytes)
@@ -320,23 +316,23 @@ while True:
 						frame = cv2.resize(frame, (awidth//2, aheight//2), interpolation = cv2.INTER_LINEAR)
 					pilimg = Image.fromarray(frame, mode='RGB')
 					frames.append(pilimg)
-					
+
 				AnimProgressWnd.close()
-				
+
 				frames[0].save(
 					afname,
-					save_all=True, 
-					append_images=frames[1:], 
-					optimize=True, 
-					duration=40, 
+					save_all=True,
+					append_images=frames[1:],
+					optimize=True,
+					duration=40,
 					loop=0)
 				del frames[:]
 				del frames
 
-	if (N_value != old_N) or (old_COLOR != S_COLOR) or (old_mul != P_mul) or (N_type != old_type):
-		if S_COLOR != old_COLOR:
-			old_COLOR = S_COLOR
-			COLOR = GetCOLOR(S_COLOR)
+	if (N_value != old_N) or (old_color != S_color) or (old_mul != P_mul) or (N_type != old_type):
+		if S_color != old_color:
+			old_color = S_color
+			color = GetColor(S_color)
 		elif old_N != N_value:
 			old_N = N_value
 		elif old_mul != P_mul:
