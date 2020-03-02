@@ -3,7 +3,7 @@ Circle of multiplication
 
 Worked program looks like this:
 
-![sshot000.png](img/sshot00.png)
+![sshot000.png](img/sshot000.png)
 
 You can save screenshot or GIF animation by pressing corresponding button.
 
